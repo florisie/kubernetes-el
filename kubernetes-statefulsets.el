@@ -54,6 +54,8 @@
       (key-value 12 "Created" ,time))))
 
 (kubernetes-ast-define-component statefulset-line (state statefulset)
+  ;; (when (not (alist-get 'statefulsets-columns state))
+  ;;   (setf (alist-get 'statefulsets-columns state) kubernetes-statefulsets--default-columns))
   (-let* ((current-time (kubernetes-state--get state 'current-time))
           (pending-deletion (kubernetes-state--get state 'statefulsets-pending-deletion))
           (marked-statefulsets (kubernetes-state--get state 'marked-statefulsets))
@@ -69,35 +71,46 @@
           (desired (or desired 0))
           (_available (or available 0))
           (_up-to-date (or up-to-date 0))
-          ([fmt] kubernetes-statefulsets--column-heading)
-          (list-fmt (split-string fmt))
-          (line `(line ,(concat
-                         ;; Name
-                         (format (pop list-fmt) (s-truncate 43 name))
-                         " "
-                         ;; Replicas (current/desired)
-                         (let ((str (format "%s/%s" current desired))
-                               (next (pop list-fmt)))
-                           (cond
-                            ((zerop desired)
-                             (format next str))
-                            ((zerop current)
-                             (propertize (format next str) 'face 'warning))
-                            ((/= current desired)
-                             (format next str))
-                            (t
-                             (propertize (format next str) 'face 'kubernetes-dimmed))))
-                         " "
-                         ;; Up-to-date
-                         (propertize (format (pop list-fmt) "") 'face 'warning)
-                         " "
-                         ;; Available
-                         (propertize (format (pop list-fmt) "") 'face 'kubernetes-dimmed)
-                         " "
-                         ;; Age
-                         (let ((start (apply #'encode-time (kubernetes-utils-parse-utc-timestamp created-time))))
-                           (propertize (format (pop list-fmt) (kubernetes--time-diff-string start current-time))
-                                       'face 'kubernetes-dimmed))))))
+          (line
+           (-let* ((row "")
+                   ((&alist 'statefulsets-columns statefulsets-columns) state))
+             ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
+             (dolist (col statefulsets-columns)
+               ;; Read the column-width (and create format-string) and header for the current column
+               (let* ((col-name (car col))
+                      (props (cdr col))
+                      (width (car (alist-get 'width props)))
+                      (fmt (concat "%" (number-to-string width) "s")))
+                 ;; Depending on the value of the header we use a specific print function.
+                 (setq row (concat row (pcase  col-name
+                                         ('Name
+                                          (format fmt (s-truncate (abs width) name))
+                                          )
+                                         ('Replicas
+                                          (let ((str (format "%s/%s" current desired))
+                                                ;; TODO remove next, use fmt directly
+                                                (next fmt))
+                                            (cond
+                                             ((zerop desired)
+                                              (format next str))
+                                             ((zerop current)
+                                              (propertize (format next str) 'face 'warning))
+                                             ((/= current desired)
+                                              (format next str))
+                                             (t
+                                              (propertize (format next str) 'face 'kubernetes-dimmed)))))
+                                         ('Dummy1
+                                          (propertize (format fmt "") 'face 'warning))
+                                         ('Dummy2
+                                          (propertize (format fmt "") 'face 'warning))
+                                         ('Age
+                                          (let ((start (apply #'encode-time (kubernetes-utils-parse-utc-timestamp created-time))))
+                                            (propertize (format fmt (kubernetes--time-diff-string start current-time))
+                                                        'face 'kubernetes-dimmed)))
+                                         (_
+                                          (format "%s " (format fmt "?"))
+                                          )) " "))))
+             row)))
     `(nav-prop (:statefulset-name ,name)
                (copy-prop ,name
                           ,(cond
