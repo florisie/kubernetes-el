@@ -24,6 +24,8 @@
   ;; TODO The two empty headers are used to align statefulsets with deployments.
   '((Name (width -45))
     (Replicas (width 10))
+    (- (width 10))
+    (- (width 10))
     (Age (width 6)))
   "Possible columns to select for resource-type statefulsets")
 
@@ -75,9 +77,10 @@
            (-let* ((row "")
                    ((&alist 'statefulsets-columns statefulsets-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col statefulsets-columns)
+             (dotimes (i (length statefulsets-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i statefulsets-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -99,17 +102,14 @@
                                               (format next str))
                                              (t
                                               (propertize (format next str) 'face 'kubernetes-dimmed)))))
-                                         ('Dummy1
-                                          (propertize (format fmt "") 'face 'warning))
-                                         ('Dummy2
-                                          (propertize (format fmt "") 'face 'warning))
                                          ('Age
                                           (let ((start (apply #'encode-time (kubernetes-utils-parse-utc-timestamp created-time))))
                                             (propertize (format fmt (kubernetes--time-diff-string start current-time))
                                                         'face 'kubernetes-dimmed)))
                                          (_
-                                          (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          (format "%s" (format fmt ""))
+                                          ))
+                                   (unless (= i (1- (length statefulsets-columns))) " ")))))
              row)))
     `(nav-prop (:statefulset-name ,name)
                (copy-prop ,name

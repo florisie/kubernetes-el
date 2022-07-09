@@ -60,9 +60,10 @@
            (-let* ((row "")
                  ((&alist 'configmaps-columns configmaps-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col configmaps-columns)
+             (dotimes (i (length configmaps-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i configmaps-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -81,7 +82,8 @@
                                            )
                                           (_
                                            (format "%s " (format fmt "?"))
-                                           )) " "))))
+                                           ))
+                                    (unless (= i (1- (length configmaps-columns))) " ")))))
              row)))
     `(nav-prop (:configmap-name ,name)
                (copy-prop ,name
@@ -106,6 +108,7 @@
   (-let* (((&alist 'configmaps-columns column-settings) state)
          ((&alist 'items configmaps) (kubernetes-state--get state 'configmaps))
          ([fmt labels] (kubernetes-utils--create-table-headers column-settings)))
+
     `(section (configmaps-container ,hidden)
               (header-with-count "Configmaps" ,configmaps)
               (indent

@@ -48,9 +48,10 @@
            (-let* ((row "")
                    ((&alist 'persistentvolumeclaims-columns persistentvolumeclaims-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col persistentvolumeclaims-columns)
+             (dotimes (i (length persistentvolumeclaims-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i persistentvolumeclaims-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -71,7 +72,8 @@
                                                         'face 'kubernetes-dimmed)))
                                          (_
                                           (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          ))
+                                   (unless (= i (1- (length persistentvolumeclaims-columns))) " ")))))
              row)))
     `(nav-prop (:persistentvolumeclaim-name ,name)
                (copy-prop ,name

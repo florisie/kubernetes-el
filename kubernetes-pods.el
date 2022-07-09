@@ -21,7 +21,7 @@
   ["%-45s %-13s %5s %10s %6s" "Name Status Ready Restarts Age"])
 
 (defconst kubernetes-pods--default-columns
-  '((Name (width -40))
+  '((Name (width -45))
     (Status (width -13))
     (Ready (width 5))
     (Restarts (width 10))
@@ -81,9 +81,10 @@
            (-let* ((row "")
                    ((&alist 'pods-columns pods-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col pods-columns)
+             (dotimes (i (length pods-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i pods-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -119,7 +120,8 @@
                                                         'face 'kubernetes-dimmed)))
                                          (_
                                           (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          ))
+                                   (unless (= i (1- (length pods-columns))) " ")))))
              row))
           (str (cond
                 ((member (downcase pod-state) '("running" "containercreating" "terminated"))

@@ -60,9 +60,10 @@
            (-let* ((row "")
                    ((&alist 'nodes-columns nodes-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col nodes-columns)
+             (dotimes (i (length nodes-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i nodes-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -98,7 +99,8 @@
                                                   (propertize (s-truncate 8 kubeProxyVersion))))
                                          (_
                                           (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          ))
+                                   (unless (= i (1- (length nodes-columns))) " ")))))
              row))
           (str (cond
                 ((string-match-p "ready" type) str)

@@ -23,7 +23,7 @@
 
 (defconst kubernetes-ingress--default-columns
   '((Name (width -45))
-    (Hosts (width 25))
+    (Hosts (width -25))
     (Address (width 20))
     (Age (width 10)))
   "Possible columns to select for resource-type ingress")
@@ -49,9 +49,10 @@
            (-let* ((row "")
                    ((&alist 'ingress-columns ingress-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col ingress-columns)
+             (dotimes (i (length ingress-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i ingress-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -73,7 +74,8 @@
                                            )
                                           (_
                                            (format "%s " (format fmt "?"))
-                                           )) " "))))
+                                           ))
+                                    (unless (= i (1- (length ingress-columns))) " ")))))
              row)))
     `(nav-prop (:ingress-name ,name)
                (copy-prop ,name

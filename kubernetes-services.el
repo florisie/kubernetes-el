@@ -76,9 +76,10 @@
            (-let* ((row "")
                    ((&alist 'services-columns services-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col services-columns)
+             (dotimes (i (length services-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i services-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -98,7 +99,8 @@
                                                         'face 'kubernetes-dimmed)))
                                          (_
                                           (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          ))
+                                   (unless (= i (1- (length services-columns))) " ")))))
                row)))
     `(nav-prop (:service-name ,name)
                (copy-prop ,name

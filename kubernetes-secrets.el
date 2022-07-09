@@ -44,9 +44,10 @@
            (-let* ((row "")
                    ((&alist 'secrets-columns secrets-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col secrets-columns)
+             (dotimes (i (length secrets-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+               (let* ((col (nth i secrets-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
@@ -63,7 +64,8 @@
                                                         'face 'kubernetes-dimmed)))
                                          (_
                                           (format "%s " (format fmt "?"))
-                                          )) " "))))
+                                          ))
+                                   (unless (= i (1- (length secrets-columns))) " ")))))
              row)))
     `(nav-prop (:secret-name ,name)
                (copy-prop ,name

@@ -20,7 +20,7 @@
   ["%-45s %10s %10s %10s %6s" "Name Replicas UpToDate Available Age"])
 
 (defconst kubernetes-deployments--default-columns
-  '((Name (width -40))
+  '((Name (width -45))
     (Replicas (width 10))
     (UpToDate (width 10))
     (Available (width 10))
@@ -76,21 +76,21 @@
            (-let* ((row "")
                    ((&alist 'deployments-columns deployments-columns) state))
              ;; Read the formatting for the table from the kubernetes-pods--default-columns variable
-             (dolist (col deployments-columns)
+
+             (dotimes (i (length deployments-columns))
                ;; Read the column-width (and create format-string) and header for the current column
-               (let* ((col-name (car col))
+
+               (let* ((col (nth i deployments-columns))
+                      (col-name (car col))
                       (props (cdr col))
                       (width (car (alist-get 'width props)))
                       (fmt (concat "%" (number-to-string width) "s")))
                  ;; Depending on the value of the header we use a specific print function.
-                 (message "Deployments col-name: %s" col-name)
                  (setq row (concat  row (pcase  col-name
                                           ('Name
-                                           (message "Match %s" col-name)
                                            (format fmt (s-truncate (abs width) name))
                                            )
                                           ('Replicas
-                                           (message "Match %s" col-name)
                                            (let ((next fmt)
                                                  (str (format "%s/%s" current desired)))
                                              (cond
@@ -104,7 +104,6 @@
                                                (propertize (format fmt str) 'face 'kubernetes-dimmed))))
                                            )
                                           ('UpToDate
-                                           (message "Match %s" col-name)
                                            (let ((next fmt))
                                              (cond
                                               ((zerop desired)
@@ -115,7 +114,6 @@
                                                (propertize (format fmt up-to-date) 'face 'kubernetes-dimmed))))
                                            )
                                           ('Available
-                                           (message "Match %s" col-name)
                                            (let ((next fmt))
                                              (cond
                                               ((zerop desired)
@@ -126,14 +124,14 @@
                                                (propertize (format fmt available) 'face 'kubernetes-dimmed))))
                                            )
                                           ('Age
-                                           (message "Match %s" col-name)
                                            (let ((start (apply #'encode-time (kubernetes-utils-parse-utc-timestamp created-time))))
                                              (propertize (format fmt (kubernetes--time-diff-string start current-time))
                                                          'face 'kubernetes-dimmed))
                                            )
                                           (_
                                            (format "%s " (format fmt "?"))
-                                           )) " "))))
+                                           ))
+                                    (unless (= i (1- (length deployments-columns))) " ")))))
              row)))
     `(nav-prop (:deployment-name ,name)
                (copy-prop ,name
